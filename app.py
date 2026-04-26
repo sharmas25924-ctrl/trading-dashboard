@@ -1,58 +1,54 @@
-st.rerun()
 import streamlit as st
+import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 
-def trader_dashboard():
-    st.title(f"📈 Trader Terminal: {st.session_state.user}")
-    
-    # --- 1. SYMBOL SELECTION DROPDOWN ---
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        selected_stock = st.selectbox(
-            "Select Market/Stock",
-            ["NIFTY 50", "BANK NIFTY", "RELIANCE", "HDFC BANK", "SBIN"],
-            index=0
-        )
-    
-    # Symbols Mapping for yfinance
-    symbols = {
-        "NIFTY 50": "^NSEI",
-        "BANK NIFTY": "^NSEBANK",
-        "RELIANCE": "RELIANCE.NS",
-        "HDFC BANK": "HDFCBANK.NS",
-        "SBIN": "SBIN.NS"
-    }
-    ticker = symbols[selected_stock]
+# 1. Page Setup
+st.set_page_config(page_title="Trading Dashboard", layout="wide")
 
-    # --- 2. LIVE CHART LOGIC ---
+# 2. Market Data & Chart Function
+def show_market_chart():
+    st.subheader("📊 Live Market Chart")
+    symbol = st.selectbox("Select Asset", ["^NSEI", "^NSEBANK", "RELIANCE.NS", "SBIN.NS"])
+    
     try:
-        # 15-minute interval candles for the last 5 days
-        df = yf.download(ticker, period="5d", interval="15m")
-        
-        if not df.empty:
+        data = yf.download(symbol, period="5d", interval="15m")
+        if not data.empty:
             fig = go.Figure(data=[go.Candlestick(
-                x=df.index,
-                open=df['Open'],
-                high=df['High'],
-                low=df['Low'],
-                close=df['Close']
+                x=data.index,
+                open=data['Open'],
+                high=data['High'],
+                low=data['Low'],
+                close=data['Close']
             )])
-            
-            fig.update_layout(
-                title=f"{selected_stock} Live Chart (15 min)",
-                template="plotly_dark",
-                xaxis_rangeslider_visible=False,
-                height=450,
-                margin=dict(l=20, r=20, t=50, b=20)
-            )
+            fig.update_layout(template="plotly_dark", xaxis_rangeslider_visible=False, height=450)
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.error("Market data fetch nahi ho raha. Check Internet.")
+            st.warning("Data fetch nahi ho raha hai.")
     except Exception as e:
-        st.error(f"Chart Error: {e}")
+        st.error(f"Error: {e}")
 
-    # --- 3. RISK MANAGEMENT SECTION ---
+# 3. Simple Login Logic
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    st.title("🔐 Login Terminal")
+    user = st.text_input("Username")
+    pwd = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if user == "admin" and pwd == "admin123":
+            st.session_state.logged_in = True
+            st.rerun()
+        else:
+            st.error("Wrong ID/Password")
+else:
+    # Dashboard Content
+    st.sidebar.button("Logout", on_click=lambda: st.session_state.update({"logged_in": False}))
+    st.title("📈 Trading Terminal - Welcome Sonu")
+    
+    # Show Chart
+    show_market_chart()
+    
     st.divider()
-    # Yahan aapka purana P&L aur Block status wala code rahega
-    # ...
+    st.success("Account Status: Active")
