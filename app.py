@@ -12,7 +12,7 @@ def show_market_chart():
     symbol = st.selectbox("Select Asset", ["^NSEI", "^NSEBANK", "RELIANCE.NS", "SBIN.NS"])
     
     try:
-       data = yf.download(symbol, period="1mo", interval="1d")
+        data = yf.download(symbol, period="1mo", interval="1d")
         if not data.empty:
             fig = go.Figure(data=[go.Candlestick(
                 x=data.index,
